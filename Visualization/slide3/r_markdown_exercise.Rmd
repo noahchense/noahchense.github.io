@@ -1,0 +1,65 @@
+---
+title: "R Markdown Exercise"
+author: "Mansun Kuo"
+date: "August 27, 2014"
+output:
+  html_document:
+    toc: yes
+---
+
+
+```{r, include=FALSE}
+# load("data/salary.RData")
+data(salary, package="DSC2014Tutorial")
+knitr::opts_chunk$set(warning = FALSE,
+                      echo = FALSE,
+                      message = FALSE)
+```
+
+
+## 油電業薪資近9萬，是教服業的4倍?
+
+新聞連結：
+
+- [自由時報](https://tw.news.yahoo.com/%E6%B2%B9%E9%9B%BB%E6%A5%AD%E8%96%AA%E8%B3%87%E8%BF%919%E8%90%AC-%E6%95%99%E6%9C%8D%E6%A5%AD%E7%9A%844%E5%80%8D-221333602.html)
+- [經濟部](http://www.moea.gov.tw/Mns/populace/news/News.aspx?kind=1&menu_id=40&news_id=35719)
+
+
+### 行業別每人每月薪資 - Top 3 & Last 3
+
+```{r plot, dpi=75, fig.width=10}
+a = order(salary_2013$每人每月薪資)
+salary_news = matrix(salary_2013$每人每月薪資[c(head(a,3),tail(a,3))],ncol = 6)
+colnames(salary_news) = salary_2013$行業[c(head(a,3),tail(a,3))]
+
+# Mac顯示中文需設置字型
+# http://equation85.github.io/blog/graph-font-of-r-in-mac-os-x/
+par(family='STKaiti')
+mp = barplot(salary_news) #x軸座標
+text(mp,10000,salary_news) #標註薪資
+```
+
+從上方圖表可以清楚地看到，`r colnames(salary_news)[which.max(salary_news)]`每人每月薪資為
+`r salary_news[which.max(salary_news)]`元，
+是所有行業別中最高的，
+第二名`r colnames(salary_news)[length(salary_news)-1]`也有
+`r salary_news[length(salary_news)-1]`，
+第三名`r colnames(salary_news)[length(salary_news)-2]`較第二名少了
+`r salary_news[length(salary_news)-1]  - salary_news[length(salary_news)-2]`，但還是有
+`r salary_news[length(salary_news)-2]`元。
+
+整體薪資水準較為不佳則是`r colnames(salary_news)[1]`
+、`r colnames(salary_news)[2]`和`r colnames(salary_news)[3]`，
+其中`r colnames(salary_news)[1]`每人每月薪資是
+`r salary_news[1]`，
+約僅有`r colnames(salary_news)[which.max(salary_news)]`的
+`r round(salary_news[1] / salary_news[length(salary_news)] * 100)`%。
+
+
+### 行業別每人每月薪資總表
+
+```{r results='asis'}
+index = order(salary_2013$每人每月薪資, decreasing = TRUE)
+knitr::kable(salary_2013[index, c("行業", "每人每月薪資")], 
+             row.names=FALSE)
+```
