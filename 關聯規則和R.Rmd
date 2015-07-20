@@ -1,0 +1,190 @@
+---
+title: "R 關聯規則"
+output: ioslides_presentation
+subtitle: 使用Apriori演算法來學習關聯規則
+author: Noah
+---
+
+## Index
+
+- R介紹，與關聯規則基本觀念
+- Apriori 演算法
+- 範例：使用Titanic的簡易乘客資料
+- 資料使用Apriori演算法
+- 篩除多餘規則
+- 視覺化
+- 解讀
+
+## R 的介紹
+
+關於R的部分，可以參考 ：
+
+[CRAN](http://cran.r-project.org/)
+
+[R語言@ WIKI](http://zh.wikipedia.org/zh-tw/R%E8%AF%AD%E8%A8%80/)
+
+## 關聯規則基本觀念
+
+<img src = '/Users/noah/RData1/R-1.png' height="400px"></img>
+
+---
+
+<img src = '/Users/noah/RData1/R-1.png' height="100px"></img>
+Support （支持度）：
+
+      在所有事件發生的狀況下，同時發生A、B事件的機率=P(B∩A)
+
+
+Confidence （信心水準） ：
+
+      在A事件發生的狀況下，同時發生A、B事件的機率=條件機率 = P(B∣A)
+
+
+Lift （增益）：
+
+      Lift值＝Confidence / Expected Confidence（本例為P(B)）
+
+                當Lift值＞1， 則A與B間有正向關係
+                當Lift值＝1， 則A與B間沒有關係
+                當Lift值＜1， 則A與B間為負向關係
+
+
+## Apriori 演算法
+
+Apriori演算法是種最有影響的挖掘布爾關聯規則頻繁項集的演算法。它的核心是基於兩階段頻集思想的遞推演算法。該關聯規則在分類上屬於單維、單層、布爾關聯規則。在這裡，所有支持度大於最小支持度的項集稱為頻繁項集(簡稱頻集)，也常稱為最大項目集。
+
+優點：
+
+      簡單、易理解、數據要求低，
+
+缺點：
+
+      1. 在每一步產生侯選項目集時循環產生的組合過多，沒有排除不應該參與組合的元素;
+
+      2. 每次計算項集的支持度時，都對資料庫D中的全部記錄進行了一遍掃描比較，如果是一個大型的資料庫的話，這種掃描比較會大大增加計算機系統的I/O開銷。而這種代價是隨著資料庫的記錄的增加呈現出幾何級數的增加。
+
+## Apriori：尋找最大項目集(頻繁項集)
+
+1. 簡單統計所有含一個元素項目集出現的頻數，並找出那些不小於最小支持度的項目集，即一維最大項目集。
+
+2. 開始循環處理直到再沒有最大項目集生成。循環過程是：第k步中，根據第k-1步生成的(k-1)維最大項目集產生k維侯選項目集，然後對資料庫進行搜索，得到侯選項目集的項集支持度，與最小支持度進行比較，從而找到k維最大項目集。
+
+
+Aproiro演算法使用上述的性質產生候選項目（Candidate itemsets），候選項目集的產生主要包含
+
+- 「結合（Join）」
+- 「刪除（Prune）」
+
+
+## 範例：使用Titanic的簡易乘客資料
+
+在泰坦尼克號數據集中，根據[Class(艙等)]、[Sex(性別)]、[Age(年齡)]、[Survired(生存)]而有四種欄位。
+
+其中，每一行代表一個人的資料。
+
+```{r, echo=FALSE}
+load("/Users/noah/RData1/titanic.raw.rdata")
+titanic_raw <- data.frame(titanic.raw)
+head(titanic_raw, 10)
+```
+
+## 範例：使用Titanic的簡易乘客資料
+
+```{r, echo=FALSE}
+load("/Users/noah/RData1/titanic.raw.rdata")
+titanic_raw <- data.frame(titanic.raw)
+```
+
+任意抓5筆資料
+
+```{r, echo=FALSE}
+idx <- sample(1:nrow(titanic_raw), 5)
+titanic_raw[idx, ]
+```
+
+---
+
+資料小結：
+```{r, echo=FALSE}
+summary(titanic_raw)
+```
+
+## 資料使用Apriori演算法
+
+- 最小支持度： supp=0.1
+- 最小信任度： conf=0.8
+- 最大規則數： maxlen=10
+
+---
+
+```{r, echo=FALSE}
+library(arules)
+rules.all <- apriori(titanic_raw)
+```
+
+## 資料使用Apriori演算法
+
+顯示分類規則
+
+```{r, echo=FALSE}
+inspect(rules.all)
+```
+
+
+## 將rhs只列出Survied 的部分
+
+```{r, echo=FALSE}
+rules <- apriori(titanic_raw,
+                 control = list(verbose=F),
+                 parameter = list(minlen=2, supp=0.005, conf=0.8),
+                 appearance = list(rhs=c("Survived=No",
+                                         "Survived=Yes"),
+                                   default="lhs"))
+quality(rules) <- round(quality(rules), digits=3)
+inspect(rules)
+```
+
+## 刪除調整規則
+
+```{r, echo=FALSE}
+#rules.sorted <- sort(rules)
+#inspect(rules.sorted)
+```
+
+## 視覺化
+
+```{r, echo=FALSE}
+library(arulesViz)
+```
+
+---
+
+```{r, echo=FALSE}
+plot(rules.all)
+```
+
+---
+
+```{r, echo=FALSE}
+plot(rules.all, method = "grouped")
+```
+
+---
+
+```{r, echo=FALSE}
+plot(rules.all, method = "graph")
+```
+
+---
+
+```{r, echo=FALSE}
+plot(rules.all, method = "graph", control = list(type = "items"))
+```
+
+---
+
+```{r, echo=FALSE}
+plot(rules.all, method = "paracoord", control = list(reorder = TRUE))
+```
+
+## 解讀
